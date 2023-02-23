@@ -5,7 +5,7 @@ const all_data = require('./methods/all');
 class Database {
     #database = this.#read_database();
     #path = PATH_TO_DATABASE_FOLDER;
-    #database_name;
+    #database_name = 'default';
     #table_name;
     #route;
 
@@ -93,40 +93,53 @@ class Database {
         return all_data();
     }
 
-    table(name) {
+    table(name = null) {
         this.#table_name = name;
-        this.#create_table();
+        if (name) {
+            this.#create_table();
+        }else {
+            this.#path = null;
+        }
 
         return this;
     }
 
-    insert(data) {
-        let filename = data.id;
-        if (!data.id) {
-            const rows = this.#route.rows;
-            filename = (rows.length)
-                ? parseInt(rows.at(-1)) + 1
-                : 1;
-        }
-        filename = filename.toString();
+    insert(data = null) {
+        if (data) {
+            let filename = data.id;
+            if (!data.id) {
+                const rows = this.#route.rows;
+                filename = (rows.length)
+                    ? parseInt(rows.at(-1)) + 1
+                    : 1;
+            }
+            filename = filename.toString();
 
-        this.#create_row({filename, data});
+            this.#create_row({filename, data});
+        }
     }
 
     remove(id = null) {
         if (id) {
             id = id.toString();
-            fs.unlinkSync(`${this.#path}\\${id}.json`);
-
-            const ind = this.#route.rows.indexOf(id);
-            this.#route.rows.splice(ind, 1);
-            this.#route.length -= 1;
+            const file = `${this.#path}\\${id}.json`;
+            if(fs.existsSync(file)) {
+                fs.unlinkSync(file);
+                
+                const ind = this.#route.rows.indexOf(id);
+                this.#route.rows.splice(ind, 1);
+                this.#route.length -= 1;
+            }
         } else {
-            fs.rmSync(`${this.#path}`, {recursive: true, force: true});
-            if (this.#table_name) {
-                delete this.#database[this.#database_name][this.#table_name];
-            } else {
-                delete this.#database[this.#database_name];
+            if (this.#path) {
+                fs.rmSync(`${this.#path}`, {recursive: true, force: true});
+                
+                if (this.#table_name && this.#database_name) {
+                    delete this.#database[this.#database_name][this.#table_name];
+                }
+                if (!this.#table_name && this.#database_name) {
+                    delete this.#database[this.#database_name];
+                }
             }
         }
         
