@@ -1,5 +1,6 @@
 const fs = require('fs');
 const { PATH_TO_DATABASE_FILE, PATH_TO_DATABASE_FOLDER } = require('./defaults');
+const all_data = require('./methods/all');
 
 class Database {
     #database = this.#read_database();
@@ -49,8 +50,9 @@ class Database {
     }
 
     #create_table() {
-        this.#path += `\\${this.#table_name}`;
-
+        if(this.#path.indexOf(this.#table_name) === -1) {
+            this.#path += `\\${this.#table_name}`;
+        }
         if (!this.#check_available_table(this.#table_name)) {
             this.#database[this.#database_name][this.#table_name] = {
                 rows: [],
@@ -80,9 +82,15 @@ class Database {
         const path_to_row = `${this.#path}\\${filename}.json`;
         fs.writeFileSync(path_to_row, JSON.stringify(data));
 
-        this.#route.rows.push(filename);
-        this.#route.length += 1;
+        if (this.#route.rows.indexOf(filename) === -1) {
+            this.#route.rows.push(filename);
+            this.#route.length += 1;
+        }
         this.#save_database();
+    }
+
+    static all() {
+        return all_data();
     }
 
     table(name) {
@@ -97,7 +105,7 @@ class Database {
         if (!data.id) {
             const rows = this.#route.rows;
             filename = (rows.length)
-                ? rows.at(-1) + 1
+                ? parseInt(rows.at(-1)) + 1
                 : 1;
         }
         filename = filename.toString();
