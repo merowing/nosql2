@@ -3,12 +3,13 @@ const { PATH_TO_DATABASE_FILE, PATH_TO_DATABASE_FOLDER } = require('./defaults')
 
 class Database {
     #database = this.#read_database();
+    #path = PATH_TO_DATABASE_FOLDER;
     #database_name;
     #table_name;
-    #path = PATH_TO_DATABASE_FOLDER;
+    #route;
 
-    constructor(database) {
-        this.#database_name = database;
+    constructor(database_name) {
+        this.#database_name = database_name;
 
         this.#create_folder();
         this.#create_database();
@@ -27,9 +28,9 @@ class Database {
     }
 
     #read_database() {
-        const file = this.#read_file(PATH_TO_DATABASE_FILE, {encoding: 'utf8', flag: 'r'});
+        const file = this.#read_file(PATH_TO_DATABASE_FILE, {encoding: 'utf8'});
 
-        if(file) {
+        if (file) {
             return JSON.parse(file);
         }
 
@@ -40,7 +41,7 @@ class Database {
         const name = this.#database_name;
         this.#path += `\\${name}`;
 
-        if(!this.#check_available_database(name)) {
+        if (!this.#check_available_database(name)) {
             this.#database[name] = {};
             this.#save_database();
             this.#create_folder();
@@ -50,7 +51,7 @@ class Database {
     #create_table() {
         this.#path += `\\${this.#table_name}`;
 
-        if(!this.#check_available_table(this.#table_name)) {
+        if (!this.#check_available_table(this.#table_name)) {
             this.#database[this.#database_name][this.#table_name] = {
                 rows: [],
                 length: 0,
@@ -58,16 +59,17 @@ class Database {
             this.#save_database();
             this.#create_folder();
         }
+        this.#route = this.#database[this.#database_name][this.#table_name];
     }
 
     #create_folder() {
-        if(!fs.existsSync(this.#path)) {
+        if (!fs.existsSync(this.#path)) {
             fs.mkdirSync(this.#path);
         }
     }
 
     #read_file(path, opts = {}) {
-        if(fs.existsSync(path)) {
+        if (fs.existsSync(path)) {
             return fs.readFileSync(path, opts);
         }
 
@@ -78,8 +80,8 @@ class Database {
         const path_to_row = `${this.#path}\\${filename}.json`;
         fs.writeFileSync(path_to_row, JSON.stringify(data));
 
-        this.#database[this.#database_name][this.#table_name].rows.push(filename);
-        this.#database[this.#database_name][this.#table_name].length += 1;
+        this.#route.rows.push(filename);
+        this.#route.length += 1;
         this.#save_database();
     }
 
@@ -92,8 +94,8 @@ class Database {
 
     insert(data) {
         let filename = data.id;
-        if(!data.id) {
-            const rows = this.#database[this.#database_name][this.#table_name].rows;
+        if (!data.id) {
+            const rows = this.#route.rows;
             filename = (rows.length)
                 ? rows.at(-1) + 1
                 : 1;
@@ -101,6 +103,26 @@ class Database {
         filename = filename.toString();
 
         this.#create_row({filename, data});
+    }
+
+    remove(id = null) {
+        if (id) {
+            id = id.toString();
+            fs.unlinkSync(`${this.#path}\\${id}.json`);
+
+            const ind = this.#route.rows.indexOf(id);
+            this.#route.rows.splice(ind, 1);
+            this.#route.length -= 1;
+        } else {
+            fs.rmSync(`${this.#path}`, {recursive: true, force: true});
+            if (this.#table_name) {
+                delete this.#database[this.#database_name][this.#table_name];
+            } else {
+                delete this.#database[this.#database_name];
+            }
+        }
+        
+        this.#save_database();
     }
 
 }
