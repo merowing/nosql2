@@ -1,5 +1,5 @@
 const DATABASE_FILE = 'database.json';
-const DATABASE_FOLDER_NAME = 'database';
+const DATABASE_FOLDER_NAME = 'core';
 const PATH_TO_DATABASE_FOLDER = __dirname + '\\' + DATABASE_FOLDER_NAME;
 const PATH_TO_DATABASE_FILE = __dirname + '\\' + DATABASE_FILE;
 
