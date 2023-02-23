@@ -5,11 +5,12 @@ const all_data = require('./methods/all');
 class Database {
     #database = this.#read_database();
     #path = PATH_TO_DATABASE_FOLDER;
-    #database_name = 'default';
+    #database_name;
     #table_name;
     #route;
+    #sort = [];
 
-    constructor(database_name) {
+    constructor(database_name = 'default') {
         this.#database_name = database_name;
 
         this.#create_folder();
@@ -120,7 +121,7 @@ class Database {
     }
 
     remove(id = null) {
-        if (id) {
+        if (id !== null || id !== '') {
             id = id.toString();
             const file = `${this.#path}\\${id}.json`;
             if(fs.existsSync(file)) {
@@ -133,7 +134,7 @@ class Database {
         } else {
             if (this.#path) {
                 fs.rmSync(`${this.#path}`, {recursive: true, force: true});
-                
+
                 if (this.#table_name && this.#database_name) {
                     delete this.#database[this.#database_name][this.#table_name];
                 }
@@ -144,6 +145,16 @@ class Database {
         }
         
         this.#save_database();
+    }
+
+    sortby(value = null, second = null) {
+        if(value) {
+            this.#sort = (second === 'asc' || !second)
+                ? [value, 'asc']
+                : [value, 'desc'];
+        }
+
+        return this;
     }
 
 }
