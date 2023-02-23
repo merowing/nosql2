@@ -6,12 +6,14 @@ class Database {
     #database_name;
     #table_name;
 
-    #check_available_database(name) {
-        return this.#database[name] !== undefined;
-    }
-
     constructor(database) {
         this.#database_name = database;
+
+        this.#create_database();
+    }
+
+    #check_available_database(name) {
+        return this.#database[name] !== undefined;
     }
     
     #check_available_table(name) {
@@ -32,17 +34,43 @@ class Database {
         return {};
     }
 
+    #create_database() {
+        const name = this.#database_name;
+
+        if(!this.#check_available_database(name)) {
+            this.#database[name] = {};
+            this.#save_database();
+        }
+    }
+
+    #create_table() {
+        if(!this.#check_available_table(this.#table_name)) {
+            this.#database[this.#database_name][this.#table_name] = {
+                rows: [],
+                length: 0,
+            };
+            this.#save_database();
+        }
+    }
+
     #read_file(path, opts = {}) {
         if(fs.existsSync(path)) {
             return fs.readFileSync(path, opts);
         }
-        
+
         return false;
     }
 
+    #write_file(path, {filename, data}) {
+        const path_to_row = `${path}\\${filename}.json`;
+        fs.writeFileSync(path_to_row, JSON.stringify(data));
+    }
+
     table(name) {
-        this.table_name = name;
-        return this.#database;
+        this.#table_name = name;
+        this.#create_table();
+
+        return this;
     }
 
 }
