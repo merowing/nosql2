@@ -9,6 +9,7 @@ class Database {
     #table_name;
     #route;
     #sort = [];
+    #temp_arr = [];
 
     constructor(database_name = 'default') {
         this.#database_name = database_name;
@@ -60,6 +61,7 @@ class Database {
             this.#create_folder();
         }
         this.#route = this.#database[this.#database_name][this.#table_name];
+        this.#temp_arr = [...this.#route.rows];
     }
 
     #create_folder() {
@@ -95,6 +97,7 @@ class Database {
     table(name = null) {
         this.#table_name = name;
         this.#path = `${PATH_TO_DATABASE_FOLDER}\\${this.#database_name}\\${name}`;
+        this.#sort = [];
 
         if (name) {
             this.#create_table();
@@ -150,13 +153,41 @@ class Database {
             this.#sort = (second === 'asc' || !second)
                 ? [value, 'asc']
                 : [value, 'desc'];
+
+            const [param, type] = this.#sort;
+            const data = this.#temp_arr.reduce((arr, filename) => {
+                const file_data = fs.readFileSync(`${this.#path}\\${filename}.json`);
+                const json = JSON.parse(file_data);
+                const value = json[param];
+
+                if(param) {
+                    const data = [value, filename];
+                    arr.push(data);
+                }
+
+                return arr;
+            }, []);
+
+            data.sort((a, b) => {
+                if(type === 'desc') {
+                    return (b[0] > a[0])
+                    ? 1
+                    : -1;
+                }
+
+                return (a[0] > b[0])
+                    ? 1
+                    : -1;
+            });
+            
+            this.#temp_arr = data.map(info => info[1]);
         }
 
         return this;
     }
 
     get(offset = 0, count = 0) {
-        const rows = this.#route.rows;
+        let rows = this.#temp_arr;
         let data = [];
         
         if(rows.length) {
