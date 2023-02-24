@@ -160,7 +160,7 @@ class Database {
                 const json = JSON.parse(file_data);
                 const value = json[param];
 
-                if(param) {
+                if(value) {
                     const data = [value, filename];
                     arr.push(data);
                 }
@@ -169,18 +169,18 @@ class Database {
             }, []);
 
             data.sort((a, b) => {
-                if(type === 'desc') {
-                    return (b[0] > a[0])
-                    ? 1
-                    : -1;
-                }
+                const condition = (type === 'desc')
+                    ? b[0] > a[0]
+                    : a[0] > b[0];
 
-                return (a[0] > b[0])
+                return (condition)
                     ? 1
                     : -1;
             });
             
-            this.#temp_arr = data.map(info => info[1]);
+            if(data.length) {
+                this.#temp_arr = data.map(info => info[1]);
+            }
         }
 
         return this;
