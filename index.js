@@ -41,7 +41,7 @@ class Database {
 
     #create_database() {
         const name = this.#database_name;
-        this.#path += `\\${name}`;
+        this.#path = `${PATH_TO_DATABASE_FOLDER}\\${name}`;
 
         if (!this.#check_available_database(name)) {
             this.#database[name] = {};
@@ -51,9 +51,6 @@ class Database {
     }
 
     #create_table() {
-        if(this.#path.indexOf(this.#table_name) === -1) {
-            this.#path += `\\${this.#table_name}`;
-        }
         if (!this.#check_available_table(this.#table_name)) {
             this.#database[this.#database_name][this.#table_name] = {
                 rows: [],
@@ -66,6 +63,7 @@ class Database {
     }
 
     #create_folder() {
+        console.log(this.#path);
         if (!fs.existsSync(this.#path)) {
             fs.mkdirSync(this.#path);
         }
@@ -96,10 +94,10 @@ class Database {
 
     table(name = null) {
         this.#table_name = name;
+        this.#path = `${PATH_TO_DATABASE_FOLDER}\\${this.#database_name}\\${name}`;
+
         if (name) {
             this.#create_table();
-        }else {
-            this.#path = null;
         }
 
         return this;
@@ -121,7 +119,7 @@ class Database {
     }
 
     remove(id = null) {
-        if (id !== null || id !== '') {
+        if (id !== null && id !== '') {
             id = id.toString();
             const file = `${this.#path}\\${id}.json`;
             if(fs.existsSync(file)) {
@@ -155,6 +153,24 @@ class Database {
         }
 
         return this;
+    }
+
+    get(offset = 0, count = 0) {
+        const rows = this.#route.rows;
+        let data = [];
+        
+        if(rows.length) {
+            data = rows.reduce((arr, filename) => {
+                const path_to_file = `${this.#path}\\${filename}.json`;
+                const file = fs.readFileSync(path_to_file);
+                const file_data = JSON.parse(file);
+
+                arr.push(file_data);
+                return arr;
+            }, []);
+        }
+
+        return data;
     }
 
 }
