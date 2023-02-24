@@ -1,15 +1,15 @@
 const fs = require('fs');
-const { PATH_TO_DATABASE_FILE, PATH_TO_DATABASE_FOLDER } = require('./defaults');
-const all_data = require('./methods/all');
+const {PATH_TO_DATABASE_FILE, PATH_TO_DATABASE_FOLDER} = require('./defaults');
+const {all: all_data} = require('./methods');
 
 class Database {
     #database = this.#read_database();
     #path = PATH_TO_DATABASE_FOLDER;
+    #sort = [];
+    #temp_arr = [];
     #database_name;
     #table_name;
     #route;
-    #sort = [];
-    #temp_arr = [];
 
     constructor(database_name = 'default') {
         this.#database_name = database_name;
@@ -33,15 +33,13 @@ class Database {
     #read_database() {
         const file = this.#read_file(PATH_TO_DATABASE_FILE, {encoding: 'utf8'});
 
-        if (file) {
-            return JSON.parse(file);
-        }
-
-        return {};
+        return (file)
+            ? JSON.parse(file)
+            : {};
     }
 
     #create_database() {
-        if(this.#database_name && typeof this.#database_name === 'string') {
+        if (this.#database_name && typeof this.#database_name === 'string') {
             const name = this.#database_name;
             this.#path = `${PATH_TO_DATABASE_FOLDER}\\${name}`;
 
@@ -133,7 +131,7 @@ class Database {
         if (id !== null && id !== '') {
             id = id.toString();
             const file = `${this.#path}\\${id}.json`;
-            if(fs.existsSync(file)) {
+            if (fs.existsSync(file)) {
                 fs.unlinkSync(file);
                 
                 const ind = this.#route.rows.indexOf(id);
@@ -157,7 +155,7 @@ class Database {
     }
 
     sortby(value = null, second = null) {
-        if(value) {
+        if (value) {
             this.#sort = (second === 'asc' || !second)
                 ? [value, 'asc']
                 : [value, 'desc'];
@@ -168,7 +166,7 @@ class Database {
                 const json = JSON.parse(file_data);
                 const value = json[param];
 
-                if(value) {
+                if (value) {
                     const data = [value, filename];
                     arr.push(data);
                 }
@@ -186,7 +184,7 @@ class Database {
                     : -1;
             });
             
-            if(data.length) {
+            if (data.length) {
                 this.#temp_arr = data.map(info => info[1]);
             }
         }
@@ -196,31 +194,31 @@ class Database {
 
     find(object = {}) {
         let object_keys = (object)
-            ? Object.keys(object)
+            ? Object.entries(object)
             : [];
 
-        if(object_keys.length > 0 && !Array.isArray(object)) {
+        if (object_keys.length > 0 && !Array.isArray(object)) {
             let data = [];
             data = this.#temp_arr.reduce((arr, file) => {
                 const file_info = fs.readFileSync(`${this.#path}\\${file}.json`);
                 const json = JSON.parse(file_info);
 
                 let found = true;
-                object_keys.forEach(key => {
-                    if(Object.hasOwn(json, key) && object[key]) {
-                        if(json[key].toString().indexOf(object[key]) === -1) {
+                object_keys.forEach(([key, value]) => {
+                    if (Object.hasOwn(json, key) && value) {
+                        if (json[key].toString().indexOf(value) === -1) {
                             found = false;
                         }
 
-                        if (/(<|>|=)\s?[0-9]/.test(object[key])) {
-                            const conditions = object[key].split(/,\s?/);
+                        if (/(<|>|=)\s?[0-9]/.test(value)) {
+                            const conditions = value.split(/,\s?/);
                             
                             for (let condition of conditions) {
                                 const data_num = condition.match(/[0-9]+/);
                                 const regex_data_number = /^\s?([>|<|=]{1,2})?\s?[0-9]+\s?$/;
                                 const symbol_str = condition.match(regex_data_number);
 
-                                if(symbol_str) {
+                                if (symbol_str) {
                                     const compare = {
                                         '>': function(num1, num2) {
                                             return this._(num1, num2) > 0;
@@ -240,8 +238,9 @@ class Database {
                                     }
 
                                     const num_from_file = json[key];
-                                    const num_from_object = data_num;
-                                    if(Object.hasOwn(compare, symbol_str[1])) {
+                                    const num_from_object = (data_num) ? data_num[0] : 0;
+                                    
+                                    if (Object.hasOwn(compare, symbol_str[1])) {
                                         found = compare[symbol_str[1]](num_from_file, num_from_object);
                                     }
                                 }
@@ -252,7 +251,7 @@ class Database {
                     }
                 });
 
-                if(found) {
+                if (found) {
                     arr.push(file);
                 }
 
@@ -269,15 +268,15 @@ class Database {
         let rows = this.#temp_arr;
         let data = [];
 
-        if(!isNaN(parseInt(offset)) && offset >= 0) {
-            if(count > 0) {
+        if (!isNaN(parseInt(offset)) && offset >= 0) {
+            if (count > 0) {
                 rows = rows.slice(offset, offset + count);
-            }else {
+            } else {
                 rows = rows.slice(0, offset);
             }
         }
         
-        if(rows.length) {
+        if (rows.length) {
             data = rows.reduce((arr, filename) => {
                 const path_to_file = `${this.#path}\\${filename}.json`;
                 const file = fs.readFileSync(path_to_file);
