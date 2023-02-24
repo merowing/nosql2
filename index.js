@@ -41,13 +41,15 @@ class Database {
     }
 
     #create_database() {
-        const name = this.#database_name;
-        this.#path = `${PATH_TO_DATABASE_FOLDER}\\${name}`;
+        if(this.#database_name && typeof this.#database_name === 'string') {
+            const name = this.#database_name;
+            this.#path = `${PATH_TO_DATABASE_FOLDER}\\${name}`;
 
-        if (!this.#check_available_database(name)) {
-            this.#database[name] = {};
-            this.#save_database();
-            this.#create_folder();
+            if (!this.#check_available_database(name)) {
+                this.#database[name] = {};
+                this.#save_database();
+                this.#create_folder();
+            }
         }
     }
 
