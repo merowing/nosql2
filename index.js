@@ -65,7 +65,6 @@ class Database {
     }
 
     #create_folder() {
-        console.log(this.#path);
         if (!fs.existsSync(this.#path)) {
             fs.mkdirSync(this.#path);
         }
@@ -119,6 +118,8 @@ class Database {
                 filename = (rows.length)
                     ? parseInt(rows.at(-1)) + 1
                     : 1;
+
+                data = {id: filename, ...data};
             }
             filename = filename.toString();
 
