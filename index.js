@@ -107,7 +107,12 @@ class Database {
     }
 
     insert(data = null) {
-        if (data) {
+        if (
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            Object.keys(data).length > 0
+        ) {
             let filename = data.id;
             if (!data.id) {
                 const rows = this.#route.rows;
