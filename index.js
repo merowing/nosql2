@@ -186,9 +186,17 @@ class Database {
         return this;
     }
 
-    get(offset = 0, count = 0) {
+    get(offset = null, count = null) {
         let rows = this.#temp_arr;
         let data = [];
+
+        if(!isNaN(parseInt(offset)) && offset >= 0) {
+            if(count > 0) {
+                rows = rows.slice(offset, offset + count);
+            }else {
+                rows = rows.slice(0, offset);
+            }
+        }
         
         if(rows.length) {
             data = rows.reduce((arr, filename) => {
